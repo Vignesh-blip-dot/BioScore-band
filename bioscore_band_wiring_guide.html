@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BioScore Band – Wiring & Build Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 14px; color: #1a1a1a; background: #f5f6f8; }
+
+  .page { max-width: 900px; margin: 0 auto; background: #fff; padding: 40px 48px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+
+  h1 { font-size: 28px; color: #1e3a5f; border-bottom: 3px solid #2e75b6; padding-bottom: 10px; margin-bottom: 6px; }
+  .subtitle { color: #555; font-size: 13px; margin-bottom: 32px; }
+
+  h2 { font-size: 18px; color: #1e3a5f; background: #e8f0fb; padding: 8px 14px; border-left: 4px solid #2e75b6; margin: 32px 0 14px; }
+  h3 { font-size: 15px; color: #2e75b6; margin: 20px 0 8px; }
+
+  p { line-height: 1.7; margin-bottom: 10px; }
+
+  /* ---- WIRING TABLE ---- */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+  th { background: #1e3a5f; color: #fff; padding: 9px 12px; text-align: left; }
+  td { padding: 8px 12px; border-bottom: 1px solid #dde3ec; vertical-align: top; }
+  tr:nth-child(even) td { background: #f0f4fb; }
+  td.pin { font-family: monospace; font-weight: bold; color: #c0392b; }
+  td.gpio { font-family: monospace; font-weight: bold; color: #27ae60; }
+  td.note { color: #555; font-style: italic; }
+
+  /* ---- COMPONENT CARDS ---- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 16px 0 24px; }
+  .card { border: 1px solid #c8d6ea; border-radius: 8px; padding: 14px 16px; }
+  .card h4 { font-size: 13px; font-weight: bold; color: #1e3a5f; margin-bottom: 6px; }
+  .card p { font-size: 12px; color: #444; line-height: 1.5; margin: 0; }
+
+  /* ---- DIAGRAM ---- */
+  .diagram { background: #111827; border-radius: 10px; padding: 28px 24px; font-family: monospace; font-size: 12px; color: #e2e8f0; line-height: 1.9; overflow-x: auto; margin: 16px 0 24px; }
+  .diagram .label { color: #93c5fd; font-weight: bold; }
+  .diagram .wire  { color: #fbbf24; }
+  .diagram .gpio  { color: #4ade80; }
+  .diagram .gnd   { color: #f87171; }
+  .diagram .pwr   { color: #fb923c; }
+
+  /* ---- BATTERY DIVIDER ---- */
+  .circuit { background: #fefce8; border: 1px solid #fbbf24; border-radius: 8px; padding: 16px 20px; font-family: monospace; font-size: 13px; line-height: 2; margin: 12px 0 20px; color: #1c1917; }
+
+  /* ---- STEPS ---- */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start; }
+  .step-num { counter-increment: step; min-width: 32px; height: 32px; background: #2e75b6; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; flex-shrink: 0; }
+  .step-body { flex: 1; padding-top: 5px; line-height: 1.7; }
+
+  /* ---- WARNINGS ---- */
+  .warn { background: #fff7ed; border-left: 4px solid #f97316; border-radius: 4px; padding: 12px 16px; margin: 14px 0; font-size: 13px; }
+  .warn strong { color: #c2410c; }
+  .info { background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px; padding: 12px 16px; margin: 14px 0; font-size: 13px; }
+  .info strong { color: #1d4ed8; }
+
+  /* ---- BOM TABLE ---- */
+  .bom td:last-child { color: #555; }
+
+  /* ---- CODE ---- */
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 12px; color: #b91c1c; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; font-size: 12px; overflow-x: auto; line-height: 1.7; margin: 10px 0 18px; }
+
+  /* ---- FOOTER ---- */
+  .footer { margin-top: 40px; border-top: 1px solid #dde3ec; padding-top: 14px; font-size: 11px; color: #888; text-align: center; }
+
+  @media print {
+    body { background: #fff; }
+    .page { box-shadow: none; padding: 20px; }
+    h2 { page-break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>⌚ BioScore Band</h1>
+  <p class="subtitle">Complete Wiring, Assembly &amp; Setup Guide — ESP32-C3 Super Mini build</p>
+
+  <!-- ======================================================= -->
+  <h2>1. Bill of Materials</h2>
+  <table class="bom">
+    <tr><th>#</th><th>Component</th><th>Qty</th><th>Notes</th></tr>
+    <tr><td>1</td><td>ESP32-C3 Super Mini</td><td>1</td><td>RISC-V core, built-in BLE 5.0, USB-C charging</td></tr>
+    <tr><td>2</td><td>MAX30102 module</td><td>1</td><td>HR + SpO₂ optical sensor; 1.8–5 V supply</td></tr>
+    <tr><td>3</td><td>MPU-6050 module</td><td>1</td><td>6-axis IMU; GY-521 breakout recommended</td></tr>
+    <tr><td>4</td><td>SSD1306 OLED 0.96"</td><td>1</td><td>128 × 64, I2C address 0x3C</td></tr>
+    <tr><td>5</td><td>LiPo battery</td><td>1</td><td>3.7 V, 400–800 mAh; JST 1.25 mm connector</td></tr>
+    <tr><td>6</td><td>Resistor 100 kΩ</td><td>2</td><td>Voltage divider for battery monitoring</td></tr>
+    <tr><td>7</td><td>Capacitor 100 nF</td><td>1</td><td>ADC noise filter (optional but recommended)</td></tr>
+    <tr><td>8</td><td>Tactile button (6 mm)</td><td>1</td><td>Optional reset / wake button</td></tr>
+    <tr><td>9</td><td>Prototype PCB or flexible strip</td><td>1</td><td>For permanent assembly</td></tr>
+    <tr><td>10</td><td>26 AWG silicone wire</td><td>—</td><td>Flexible, rated for wearable use</td></tr>
+  </table>
+
+  <!-- ======================================================= -->
+  <h2>2. ESP32-C3 Super Mini Pinout Reference</h2>
+
+  <div class="diagram">
+<span class="label">            ESP32-C3 Super Mini</span>
+<span class="label">         ┌──────────────────────────┐</span>
+<span class="label">         │  USB-C                   │</span>
+<span class="label">         ├──────────────────────────┤</span>
+<span class="gnd">  GND  ──┤ GND              GND ────┤── GND</span>
+<span class="pwr">  3V3  ──┤ 3V3              5V  ────┤── (USB 5V out)</span>
+<span class="gpio"> GPIO0  ──┤ G0               G10 ────┤── GPIO10  [BOOT]</span>
+<span class="gpio"> GPIO1  ──┤ G1               G9  ────┤── GPIO9</span>
+<span class="gpio"> GPIO2  ──┤ G2  ◄─ BAT ADC   G8  ────┤── GPIO8  SDA ●</span>
+<span class="gpio"> GPIO3  ──┤ G3               G7  ────┤── GPIO7</span>
+<span class="gpio"> GPIO4  ──┤ G4               G6  ────┤── GPIO6</span>
+<span class="gpio"> GPIO5  ──┤ G5               G5  ────┤── GPIO5</span>
+<span class="gpio">              SCL ● G9  ────┤── GPIO9</span>
+<span class="label">         └──────────────────────────┘</span>
+  </div>
+
+  <div class="warn">
+    <strong>⚠ Strapping Pin Warning:</strong> GPIO0 is a boot strapping pin. Do NOT connect it to sensors, ADC inputs, or pull it LOW during power-up — this holds the chip in download mode. Always use GPIO2/3 for ADC reads.
+  </div>
+
+  <!-- ======================================================= -->
+  <h2>3. I2C Bus — Shared by All Three Devices</h2>
+
+  <p>The OLED, MAX30102, and MPU-6050 all share the same I2C bus. Each device has a unique address so they don't conflict.</p>
+
+  <table>
+    <tr><th>Signal</th><th>ESP32-C3 GPIO</th><th>All three devices connect here</th></tr>
+    <tr>
+      <td><strong>SDA</strong></td>
+      <td class="gpio">GPIO 8</td>
+      <td>SDA pin of OLED + MAX30102 + MPU-6050 (all in parallel)</td>
+    </tr>
+    <tr>
+      <td><strong>SCL</strong></td>
+      <td class="gpio">GPIO 9</td>
+      <td>SCL pin of OLED + MAX30102 + MPU-6050 (all in parallel)</td>
+    </tr>
+    <tr>
+      <td><strong>VCC</strong></td>
+      <td class="pwr" style="color:#c2410c">3.3 V</td>
+      <td>Power all three modules from the 3V3 pin</td>
+    </tr>
+    <tr>
+      <td><strong>GND</strong></td>
+      <td class="gnd" style="color:#b91c1c">GND</td>
+      <td>Common ground for all modules</td>
+    </tr>
+  </table>
+
+  <div class="info">
+    <strong>ℹ I2C Addresses:</strong> SSD1306 = <code>0x3C</code>, MAX30102 = <code>0x57</code>, MPU-6050 = <code>0x68</code> (AD0 low) or <code>0x69</code> (AD0 high). No conflicts.
+  </div>
+
+  <!-- ======================================================= -->
+  <h2>4. Complete Pin-by-Pin Wiring Table</h2>
+
+  <h3>4.1 — SSD1306 OLED (0.96 inch)</h3>
+  <table>
+    <tr><th>OLED Pin</th><th>→ ESP32-C3 Pin</th><th>Notes</th></tr>
+    <tr><td class="pin">VCC</td><td class="gpio">3V3</td><td class="note">3.3 V supply</td></tr>
+    <tr><td class="pin">GND</td><td class="gpio">GND</td><td class="note">Common ground</td></tr>
+    <tr><td class="pin">SDA</td><td class="gpio">GPIO 8</td><td class="note">I2C data</td></tr>
+    <tr><td class="pin">SCL</td><td class="gpio">GPIO 9</td><td class="note">I2C clock</td></tr>
+  </table>
+
+  <h3>4.2 — MAX30102 Heart Rate Sensor</h3>
+  <table>
+    <tr><th>MAX30102 Pin</th><th>→ ESP32-C3 Pin</th><th>Notes</th></tr>
+    <tr><td class="pin">VIN / VCC</td><td class="gpio">3V3</td><td class="note">Module regulator accepts 3.3–5 V</td></tr>
+    <tr><td class="pin">GND</td><td class="gpio">GND</td><td class="note">Common ground</td></tr>
+    <tr><td class="pin">SDA</td><td class="gpio">GPIO 8</td><td class="note">I2C data (shared bus)</td></tr>
+    <tr><td class="pin">SCL</td><td class="gpio">GPIO 9</td><td class="note">I2C clock (shared bus)</td></tr>
+    <tr><td class="pin">INT</td><td class="gpio">Not connected</td><td class="note">Interrupt pin — not used in polling mode</td></tr>
+  </table>
+
+  <div class="warn">
+    <strong>⚠ Sensor placement:</strong> The MAX30102 must sit directly against skin with gentle pressure. Mount it on the underside of the band, finger-facing. If the IR value stays below 20,000 in the serial monitor, check pressure and ambient light interference.
+  </div>
+
+  <h3>4.3 — MPU-6050 Accelerometer / Gyroscope (GY-521)</h3>
+  <table>
+    <tr><th>MPU-6050 Pin</th><th>→ ESP32-C3 Pin</th><th>Notes</th></tr>
+    <tr><td class="pin">VCC</td><td class="gpio">3V3</td><td class="note">3.3 V supply</td></tr>
+    <tr><td class="pin">GND</td><td class="gpio">GND</td><td class="note">Common ground</td></tr>
+    <tr><td class="pin">SDA</td><td class="gpio">GPIO 8</td><td class="note">I2C data (shared bus)</td></tr>
+    <tr><td class="pin">SCL</td><td class="gpio">GPIO 9</td><td class="note">I2C clock (shared bus)</td></tr>
+    <tr><td class="pin">AD0</td><td class="gpio">GND</td><td class="note">Sets I2C address to 0x68. Leave floating or tie low.</td></tr>
+    <tr><td class="pin">INT</td><td class="gpio">Not connected</td><td class="note">Not used in this firmware</td></tr>
+    <tr><td class="pin">XDA / XCL</td><td class="gpio">Not connected</td><td class="note">Auxiliary I2C — not needed</td></tr>
+  </table>
+
+  <h3>4.4 — Battery Voltage Divider</h3>
+  <p>The ESP32-C3 ADC reads max ~3.9 V with <code>ADC_11db</code> attenuation. A LiPo reaches 4.2 V when full, so we use a 1:1 voltage divider (two equal resistors) to halve the voltage before the ADC pin.</p>
+
+  <div class="circuit">
+    LiPo (+) ──┬── 100kΩ ──┬── 100kΩ ── GND
+               │            │
+               │         GPIO 2  (ADC input + 100 nF cap to GND)
+               │
+           (Also feeds ESP32-C3 BAT pin / charge circuit)
+  </div>
+
+  <table>
+    <tr><th>Connection</th><th>Details</th></tr>
+    <tr><td>LiPo positive (+)</td><td>Top of R1 (100 kΩ)</td></tr>
+    <tr><td>Junction R1–R2</td><td>→ GPIO 2 and one leg of 100 nF cap</td></tr>
+    <tr><td>Bottom of R2 + cap</td><td>→ GND</td></tr>
+    <tr><td>LiPo negative (–)</td><td>→ GND</td></tr>
+  </table>
+
+  <div class="info">
+    <strong>ℹ Why two equal resistors?</strong> At 4.2 V full charge, the divider outputs 2.1 V — well within the ADC's 3.9 V range. The firmware multiplies the reading by 2 to recover the real voltage. The 100 nF cap filters ADC sampling noise.
+  </div>
+
+  <!-- ======================================================= -->
+  <h2>5. Full Wiring Diagram (ASCII)</h2>
+
+  <div class="diagram">
+<span class="label">                  ┌─────────────────────────────────────────┐</span>
+<span class="label">                  │         ESP32-C3 Super Mini               │</span>
+<span class="pwr">         3V3 ─────┤ 3V3           GND ──────────────────────── GND rail</span>
+<span class="gpio">         SDA ─────┤ GPIO8                                       │</span>
+<span class="gpio">         SCL ─────┤ GPIO9                                       │</span>
+<span class="gpio">     BAT ADC ─────┤ GPIO2                                       │</span>
+<span class="label">                  └─────────────────────────────────────────────┘</span>
+<span class="label">                        │       │          │</span>
+<span class="label">         ───────────────┘       │          └──────────────────</span>
+<span class="label">         │                      │                             │</span>
+<span class="label">  ┌──────┴──────┐       ┌───────┴───────┐            ┌───────┴───────┐</span>
+<span class="label">  │  SSD1306    │       │   MAX30102    │            │   MPU-6050    │</span>
+<span class="label">  │  OLED 0.96" │       │  Heart Rate   │            │  GY-521 IMU   │</span>
+<span class="label">  │             │       │               │            │               │</span>
+<span class="pwr">  │ VCC─── 3V3  │       │ VCC ─── 3V3   │            │ VCC ─── 3V3   │</span>
+<span class="gnd">  │ GND─── GND  │       │ GND ─── GND   │            │ GND ─── GND   │</span>
+<span class="wire">  │ SDA─── G8   │       │ SDA ─── G8    │            │ SDA ─── G8    │</span>
+<span class="wire">  │ SCL─── G9   │       │ SCL ─── G9    │            │ SCL ─── G9    │</span>
+<span class="label">  │ Addr: 0x3C  │       │ Addr: 0x57    │            │ AD0─── GND    │</span>
+<span class="label">  └─────────────┘       └───────────────┘            │ Addr: 0x68    │</span>
+<span class="label">                                                     └───────────────┘</span>
+
+<span class="label">  Battery Voltage Divider:</span>
+<span class="pwr">  LiPo (+) ─── R1(100kΩ) ─── GPIO2 ─── R2(100kΩ) ─── GND</span>
+<span class="label">                              │</span>
+<span class="label">                          100nF cap to GND</span>
+  </div>
+
+  <!-- ======================================================= -->
+  <h2>6. Arduino IDE Setup</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Add ESP32 board support.</strong> Open Arduino IDE → Preferences → Additional Boards Manager URLs and add:<br>
+        <code>https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json</code>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Install ESP32 boards.</strong> Go to Tools → Board → Boards Manager → search "esp32" by Espressif → Install version 2.0.14 or later.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Select board:</strong> Tools → Board → ESP32 Arduino → <strong>ESP32C3 Dev Module</strong>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <strong>Board settings:</strong>
+        <br>USB CDC On Boot: <strong>Enabled</strong>
+        <br>CPU Frequency: <strong>80 MHz</strong> (saves power)
+        <br>Flash Size: <strong>4MB</strong>
+        <br>Partition Scheme: <strong>Default 4MB</strong>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <strong>Install required libraries</strong> via Library Manager (Tools → Manage Libraries):
+        <ul style="margin-top:6px; padding-left:20px; line-height:2;">
+          <li><code>SparkFun MAX3010x Pulse and Proximity Sensor Library</code></li>
+          <li><code>MPU6050 by Electronic Cats</code> (or Jeff Rowberg's I2Cdev)</li>
+          <li><code>Adafruit SSD1306</code></li>
+          <li><code>Adafruit GFX Library</code></li>
+          <li>ESP32 BLE Arduino — <em>bundled with ESP32 board package</em></li>
+        </ul>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <strong>Upload the firmware.</strong> Hold the BOOT button while pressing RESET on the C3 Super Mini to enter download mode, then click Upload.
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <h2>7. First Boot Verification</h2>
+
+  <p>Open the Serial Monitor at <strong>115200 baud</strong>. You should see:</p>
+  <pre>MAX30102 OK
+MPU6050 OK
+System ready — advertising as BioScoreBand</pre>
+
+  <p>The OLED should briefly show "BioScore Band" then switch to the live data screen.</p>
+
+  <table>
+    <tr><th>What to check</th><th>Expected</th><th>If wrong</th></tr>
+    <tr><td>IR value in serial</td><td>&gt; 20,000 when finger on sensor</td><td>Check MAX30102 wiring; increase LED brightness in <code>particleSensor.setup()</code></td></tr>
+    <tr><td>HR reading</td><td>40–180 BPM after ~10 s</td><td>Ensure sensor is flush against skin with light pressure</td></tr>
+    <tr><td>HRV value</td><td>Updates every 2 minutes</td><td>Normal — it needs 10+ valid beats first</td></tr>
+    <tr><td>Battery %</td><td>Roughly correct</td><td>Verify voltage divider resistors are equal; check GPIO2 wiring</td></tr>
+    <tr><td>BLE visible</td><td>"BioScoreBand" appears in phone BLE scan</td><td>Ensure BLE libs are installed; check board selection is C3</td></tr>
+  </table>
+
+  <!-- ======================================================= -->
+  <h2>8. Power Budget &amp; Battery Life Estimate</h2>
+
+  <table>
+    <tr><th>Component</th><th>Active current</th><th>With light sleep</th></tr>
+    <tr><td>ESP32-C3 (80 MHz)</td><td>~22 mA</td><td>~0.8 mA avg (10 ms sleep / 10 ms active)</td></tr>
+    <tr><td>SSD1306 OLED</td><td>~8–20 mA</td><td>~4 mA (5 Hz refresh)</td></tr>
+    <tr><td>MAX30102</td><td>~1 mA</td><td>~1 mA (always sampling)</td></tr>
+    <tr><td>MPU-6050</td><td>~3.8 mA</td><td>~3.8 mA</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>~35–45 mA</strong></td><td><strong>~10–12 mA</strong></td></tr>
+  </table>
+
+  <p>With a 500 mAh LiPo and light sleep enabled: <strong>~40–50 hours</strong> estimated runtime.</p>
+
+  <div class="info">
+    <strong>💡 Tip:</strong> To further extend battery life, turn off the OLED between display updates using <code>display.ssd1306_command(SSD1306_DISPLAYOFF)</code> when no motion is detected for 30 seconds.
+  </div>
+
+  <!-- ======================================================= -->
+  <h2>9. Troubleshooting Quick Reference</h2>
+
+  <table>
+    <tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+    <tr><td>OLED stays blank</td><td>I2C address wrong or wiring issue</td><td>Run I2C scanner sketch; verify SDA=G8, SCL=G9</td></tr>
+    <tr><td>HR always 0 or stuck at 70</td><td>Finger not on sensor / too much motion</td><td>Hold still for 15 s; check IR &gt; 20k in serial</td></tr>
+    <tr><td>Board won't upload</td><td>Not in download mode</td><td>Hold BOOT, tap RESET, release BOOT, then upload</td></tr>
+    <tr><td>BLE not discoverable</td><td>Wrong board selected</td><td>Must use ESP32C3 Dev Module, not generic ESP32</td></tr>
+    <tr><td>Battery reads 0% or 200%</td><td>Voltage divider missing / wrong GPIO</td><td>Confirm GPIO2, two 100k resistors, equal values</td></tr>
+    <tr><td>I2C devices not found</td><td>Missing pull-up resistors</td><td>Most modules include them; if not, add 4.7kΩ SDA/SCL to 3V3</td></tr>
+    <tr><td>MPU6050 test fails</td><td>AD0 floating</td><td>Connect AD0 to GND to lock address at 0x68</td></tr>
+  </table>
+
+  <!-- ======================================================= -->
+  <h2>10. Assembly Tips for Wearable Form Factor</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body"><strong>Use flexible PCB or perfboard.</strong> Cut a strip ~20 mm × 60 mm. Solder the ESP32-C3 Super Mini in the center. Route I2C lines along one edge.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body"><strong>MAX30102 placement.</strong> Mount it on the underside (skin-facing side) of the band, centered on the wrist. Use a cutout in the band material above it to let the LEDs contact skin directly.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body"><strong>OLED placement.</strong> Mount on the top side, facing up, near the center of the band. Use a thin double-sided foam tape to prevent cracking the glass from flexing.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body"><strong>Battery.</strong> Attach a 400–500 mAh LiPo to the underside with double-sided tape. Route JST connector to the ESP32-C3's BAT pin. Keep away from the MAX30102 to avoid interference.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body"><strong>Strain relief.</strong> Use a small dot of hot glue or epoxy at each wire solder joint. Silicone wire (26–28 AWG) handles repeated flexing far better than standard PVC wire.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body"><strong>Conformal coat.</strong> Lightly spray the assembled PCB (except the MAX30102 optical window and USB port) with conformal coating to protect against sweat moisture.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    BioScore Band — Wiring &amp; Build Guide | Generated for ESP32-C3 Super Mini firmware v2.0
+  </div>
+
+</div>
+</body>
+</html>
