@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BioScore Band</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #0a0f1e;
+  --bg2:    #111827;
+  --bg3:    #1a2235;
+  --border: #1f2f4a;
+  --text:   #e2e8f0;
+  --muted:  #64748b;
+  --accent: #3b82f6;
+  --green:  #22c55e;
+  --lime:   #84cc16;
+  --amber:  #f59e0b;
+  --red:    #ef4444;
+  --orange: #fb923c;
+  --purple: #a78bfa;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; padding: 20px 16px 48px;
+}
+.header { text-align: center; margin-bottom: 18px; }
+.header h1 { font-size: 22px; font-weight: 700; margin-bottom: 3px; }
+.header p  { font-size: 12px; color: var(--muted); }
+
+.status {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 6px 18px; font-size: 12px;
+  color: var(--muted); margin: 0 auto 14px; width: fit-content;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted);
+       flex-shrink: 0; transition: background 0.3s; }
+.dot.on  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot.ing { background: var(--amber); animation: pulse 0.8s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+#btn {
+  display: block; width: 100%; max-width: 340px; margin: 0 auto 14px;
+  padding: 12px; background: var(--accent); color: #fff; border: none;
+  border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.2s;
+}
+#btn:hover    { opacity: 0.85; }
+#btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.warn {
+  background: #1c1408; border: 1px solid #92400e; border-radius: 10px;
+  padding: 10px 14px; font-size: 12px; color: #fbbf24;
+  max-width: 340px; margin: 0 auto 12px; line-height: 1.6; display: none;
+}
+.info {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px; max-width: 340px;
+  margin: 0 auto 14px; font-size: 12px; color: var(--muted); line-height: 1.8;
+}
+.info b { color: var(--text); }
+
+/* calibration progress */
+.calib-box {
+  background: var(--bg2); border: 1px solid #92400e;
+  border-radius: 12px; padding: 10px 14px; max-width: 340px;
+  margin: 0 auto 14px; display: none;
+}
+.calib-hdr {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--amber); margin-bottom: 7px;
+}
+.calib-track { height: 6px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.calib-fill  { height: 100%; border-radius: 4px; background: var(--amber);
+               transition: width 0.8s ease; width: 0%; }
+.calib-hint  { font-size: 11px; color: var(--muted); margin-top: 6px; text-align: center; }
+
+/* 2x2 cards */
+.cards {
+  display: grid; grid-template-columns: repeat(2,1fr);
+  gap: 10px; max-width: 340px; margin: 0 auto 12px;
+}
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 10px; text-align: center;
+  transition: border-color 0.4s;
+}
+.card.hi { border-color: var(--accent); }
+.lbl   { font-size: 10px; font-weight: 600; letter-spacing: 1px;
+         text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.val   { font-size: 38px; font-weight: 800; line-height: 1;
+         margin-bottom: 3px; color: var(--muted); transition: color 0.4s; }
+.sub   { font-size: 11px; color: var(--muted); }
+.grade { font-size: 10px; font-weight: 600; margin-top: 5px;
+         color: var(--muted); min-height: 14px; }
+
+.c-great { color: var(--green)  !important; }
+.c-good  { color: var(--lime)   !important; }
+.c-fair  { color: var(--amber)  !important; }
+.c-low   { color: var(--red)    !important; }
+.c-fire  { color: var(--orange); }
+.c-step  { color: var(--purple); }
+
+/* gauge */
+.gauge {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 12px 14px; max-width: 340px; margin: 0 auto 12px;
+}
+.gauge-hdr {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.track { height: 10px; background: var(--bg3); border-radius: 6px;
+         overflow: hidden; position: relative; }
+.fill  { height: 100%; border-radius: 6px; width: 0%;
+         transition: width 1s ease, background 0.4s; background: var(--muted); }
+.neutral { position: absolute; top: 0; left: 50%; width: 2px; height: 100%;
+           background: rgba(255,255,255,0.2); pointer-events: none; }
+.gauge-note { font-size: 10px; color: var(--muted); margin-top: 5px;
+              text-align: center; }
+
+/* sparkline */
+.spark {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 12px 14px; max-width: 340px; margin: 0 auto 12px;
+}
+.spark-hdr {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.spark-hdr span { font-weight: 400; font-size: 10px; }
+canvas { width: 100%; height: 64px; display: block; }
+
+/* log */
+.logbox {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 10px 12px; max-width: 340px; margin: 0 auto 10px;
+}
+.log-hdr { font-size: 10px; font-weight: 600; letter-spacing: 1px;
+           text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+#log { font-family: monospace; font-size: 11px; color: var(--muted);
+       max-height: 110px; overflow-y: auto; line-height: 1.9; }
+.row { border-bottom: 1px solid #0c1525; padding: 1px 0; }
+.ts  { color: #38bdf8; margin-right: 6px; }
+#stamp { text-align: center; font-size: 11px; color: var(--muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⌚ BioScore Band</h1>
+  <p>Real-time nervous system dashboard</p>
+</div>
+
+<div class="warn" id="warn">
+  ⚠ Web Bluetooth requires <b>Chrome</b> on Android or desktop.<br>
+  Firefox and Safari are not supported.
+</div>
+
+<div class="status">
+  <div class="dot" id="dot"></div>
+  <span id="stxt">Not connected</span>
+</div>
+
+<button id="btn" onclick="connectBLE()">Connect to Band</button>
+
+<div class="info" id="info">
+  <b>Before connecting:</b><br>
+  • Band must be powered on and worn<br>
+  • Use <b>Chrome</b> browser<br>
+  • Keep phone within 30 cm of band<br>
+  • Scores appear after 30 min calibration
+</div>
+
+<!-- Shown while calibrating (scores = 50 default) -->
+<div class="calib-box" id="calibBox">
+  <div class="calib-hdr">
+    <span>⏳ Calibrating</span>
+    <span id="calibLabel">waiting...</span>
+  </div>
+  <div class="calib-track">
+    <div class="calib-fill" id="calibFill"></div>
+  </div>
+  <div class="calib-hint">Wear band continuously for 30 min to build your personal baseline</div>
+</div>
+
+<!-- 2×2 score grid -->
+<div class="cards">
+  <div class="card" id="cMini">
+    <div class="lbl">Mini Score</div>
+    <div class="val" id="vMini">--</div>
+    <div class="sub">5-min window</div>
+    <div class="grade" id="gMini"></div>
+  </div>
+  <div class="card" id="cDaily">
+    <div class="lbl">Daily Score</div>
+    <div class="val" id="vDaily">--</div>
+    <div class="sub">today</div>
+    <div class="grade" id="gDaily"></div>
+  </div>
+  <div class="card" id="cStrk">
+    <div class="lbl">Streak</div>
+    <div class="val c-fire" id="vStrk">--</div>
+    <div class="sub">calm windows</div>
+    <div class="grade" id="gStrk"></div>
+  </div>
+  <div class="card" id="cStep">
+    <div class="lbl">Steps</div>
+    <div class="val c-step" id="vStep">--</div>
+    <div class="sub">today</div>
+    <div class="grade" id="gStep">via OLED only</div>
+  </div>
+</div>
+
+<!-- Daily progress gauge — neutral at 50 -->
+<div class="gauge">
+  <div class="gauge-hdr">
+    <span>Daily Progress</span>
+    <span id="gpct">--%</span>
+  </div>
+  <div class="track">
+    <div class="fill" id="gfill"></div>
+    <div class="neutral" title="Neutral: 50"></div>
+  </div>
+  <div class="gauge-note">Neutral baseline at 50 · Resets daily after 20 hours</div>
+</div>
+
+<!-- Mini score history — last 8 readings (SPARK_SIZE = 8) -->
+<div class="spark">
+  <div class="spark-hdr">
+    Mini Score History
+    <span id="sparkCount">last 8 readings</span>
+  </div>
+  <canvas id="cv"></canvas>
+</div>
+
+<!-- Event log -->
+<div class="logbox">
+  <div class="log-hdr">Event Log</div>
+  <div id="log"></div>
+</div>
+
+<p id="stamp"></p>
+
+<script>
+const SVC  = '11111111-1111-1111-1111-111111111111';
+const MINI = '22222222-2222-2222-2222-222222222222';
+const DALY = '33333333-3333-3333-3333-333333333333';
+const STRK = '44444444-4444-4444-4444-444444444444';
+// Steps: no BLE characteristic in firmware — shown on OLED only
+
+let hist      = [];
+let dev       = null;
+let calibDone = false;
+
+if (!navigator.bluetooth) {
+  document.getElementById('warn').style.display = 'block';
+  document.getElementById('btn').disabled = true;
+  document.getElementById('stxt').textContent = 'Browser not supported — use Chrome';
+}
+
+function addLog(msg) {
+  const el  = document.getElementById('log');
+  const now = new Date().toLocaleTimeString();
+  const d   = document.createElement('div');
+  d.className = 'row';
+  d.innerHTML = `<span class="ts">${now}</span>${msg}`;
+  el.prepend(d);
+  while (el.children.length > 50) el.removeChild(el.lastChild);
+}
+
+function scoreCol(v) {
+  if (v >= 75) return 'c-great';
+  if (v >= 60) return 'c-good';
+  if (v >= 45) return 'c-fair';
+  return 'c-low';
+}
+
+function scoreLabel(v) {
+  if (v >= 75) return 'Excellent';
+  if (v >= 60) return 'Good';
+  if (v >= 45) return 'Fair';
+  return 'Low';
+}
+
+function gaugeCol(v) {
+  if (v >= 75) return '#22c55e';
+  if (v >= 60) return '#84cc16';
+  if (v >= 45) return '#f59e0b';
+  return '#ef4444';
+}
+
+function flash(id) {
+  const el = document.getElementById(id);
+  el.classList.add('hi');
+  setTimeout(() => el.classList.remove('hi'), 2000);
+}
+
+function readFloat(dv) {
+  if (dv.byteLength >= 4) return dv.getFloat32(0, true);
+  if (dv.byteLength === 1) return dv.getUint8(0);
+  return 0;
+}
+
+function showCalib() {
+  document.getElementById('calibBox').style.display = 'block';
+  document.getElementById('calibLabel').textContent = 'Wear for ~30 min';
+  document.getElementById('calibFill').style.width  = '5%';
+}
+
+function hideCalib() {
+  document.getElementById('calibBox').style.display = 'none';
+}
+
+function onMini(v) {
+  const el = document.getElementById('vMini');
+  const gr = document.getElementById('gMini');
+
+  // During calibration firmware sends 50.0 as default (scores show --)
+  if (!calibDone) {
+    el.textContent = '--';
+    el.className   = 'val';
+    gr.textContent = 'Calibrating...';
+    gr.style.color = '#f59e0b';
+    showCalib();
+    return;
+  }
+
+  el.textContent = Math.round(v);
+  el.className   = 'val ' + scoreCol(v);
+  gr.textContent = scoreLabel(v);
+  gr.className   = 'grade ' + scoreCol(v);
+  flash('cMini');
+
+  // SPARK_SIZE = 8 in firmware — keep history at 8
+  hist.push(v);
+  if (hist.length > 8) hist.shift();
+  drawSpark();
+  document.getElementById('sparkCount').textContent =
+    hist.length + ' / 8 readings';
+
+  addLog(`Mini → <b>${Math.round(v)}</b> <span style="color:var(--muted)">${scoreLabel(v)}</span>`);
+  document.getElementById('stamp').textContent =
+    'Last update: ' + new Date().toLocaleTimeString();
+}
+
+function onDaily(v) {
+  const el = document.getElementById('vDaily');
+  const gr = document.getElementById('gDaily');
+
+  // Calibration complete when daily moves meaningfully from 50
+  // Firmware explicitly sets daily_score = 50 at CAL completion
+  // so we use the streak value changing as the true signal
+  // For display: show -- until calibDone flag is set by onStreak
+  if (!calibDone) {
+    el.textContent = '--';
+    el.className   = 'val';
+    gr.textContent = 'Calibrating...';
+    gr.style.color = '#f59e0b';
+    document.getElementById('gfill').style.width = '0%';
+    document.getElementById('gpct').textContent  = '--%';
+    return;
+  }
+
+  el.textContent = Math.round(v);
+  el.className   = 'val ' + scoreCol(v);
+  gr.textContent = scoreLabel(v);
+  gr.className   = 'grade ' + scoreCol(v);
+  flash('cDaily');
+
+  document.getElementById('gfill').style.width      = v + '%';
+  document.getElementById('gfill').style.background = gaugeCol(v);
+  document.getElementById('gpct').textContent       = Math.round(v) + '%';
+
+  addLog(`Daily → <b>${Math.round(v)}</b> <span style="color:var(--muted)">${scoreLabel(v)}</span>`);
+  document.getElementById('stamp').textContent =
+    'Last update: ' + new Date().toLocaleTimeString();
+}
+
+function onStreak(v) {
+  const el = document.getElementById('vStrk');
+  const gr = document.getElementById('gStrk');
+
+  // Firmware STREAK_THRESHOLD = 2 — bonus multiplier applies at streak >= 2
+  if (v >= 3) {
+    el.textContent = '🔥' + v;
+  } else {
+    el.textContent = v;
+  }
+
+  if (v === 0) {
+    gr.textContent = '';
+    gr.style.color = 'var(--muted)';
+  } else if (v < 2) {
+    gr.textContent = 'Building streak';
+    gr.style.color = '#f59e0b';
+  } else if (v < 3) {
+    gr.textContent = '+20% bonus active';
+    gr.style.color = '#fb923c';
+  } else {
+    gr.textContent = '+20% bonus 🔥';
+    gr.style.color = '#fb923c';
+  }
+
+  // Once band connects and sends streak, calibration is done
+  // (firmware only sends BLE notifications after calibration completes)
+  if (!calibDone) {
+    calibDone = true;
+    hideCalib();
+    addLog('✅ Calibration complete — scores now active.');
+  }
+
+  addLog(`Streak → <b>${v}</b> window${v !== 1 ? 's' : ''}`);
+}
+
+function drawSpark() {
+  const cv  = document.getElementById('cv');
+  const dpr = window.devicePixelRatio || 1;
+  const w   = cv.offsetWidth;
+  const h   = cv.offsetHeight;
+  cv.width  = w * dpr;
+  cv.height = h * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  if (hist.length < 2) {
+    ctx.fillStyle = '#64748b';
+    ctx.font      = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Waiting for readings...', w / 2, h / 2 + 4);
+    return;
+  }
+
+  const mn    = Math.min(...hist);
+  const mx    = Math.max(...hist);
+  const range = (mx - mn) || 1;
+  const p     = 8;
+
+  // Dashed zone lines at 45, 60, 75
+  [[75,'rgba(34,197,94,0.2)'],[60,'rgba(132,204,22,0.2)'],[45,'rgba(245,158,11,0.2)']].forEach(([z,c]) => {
+    const y = h - p - ((z - mn) / range) * (h - p * 2);
+    if (y > p && y < h) {
+      ctx.strokeStyle = c; ctx.lineWidth = 1;
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+
+  // Gradient fill
+  const gr = ctx.createLinearGradient(0,0,0,h);
+  gr.addColorStop(0,'rgba(59,130,246,0.3)');
+  gr.addColorStop(1,'rgba(59,130,246,0)');
+  ctx.beginPath();
+  hist.forEach((v,i) => {
+    const x = p + (i/(hist.length-1))*(w-p*2);
+    const y = h - p - ((v-mn)/range)*(h-p*2);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  const lx = p + (w-p*2);
+  const ly = h - p - ((hist[hist.length-1]-mn)/range)*(h-p*2);
+  ctx.lineTo(lx,h); ctx.lineTo(p,h); ctx.closePath();
+  ctx.fillStyle = gr; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  hist.forEach((v,i) => {
+    const x = p + (i/(hist.length-1))*(w-p*2);
+    const y = h - p - ((v-mn)/range)*(h-p*2);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2;
+  ctx.lineJoin = 'round'; ctx.stroke();
+
+  // Dot
+  ctx.beginPath(); ctx.arc(lx,ly,4,0,Math.PI*2);
+  ctx.fillStyle = '#3b82f6'; ctx.fill();
+
+  // Score labels above each point
+  ctx.fillStyle = '#94a3b8'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+  hist.forEach((v,i) => {
+    const x = p + (i/(hist.length-1))*(w-p*2);
+    const y = h - p - ((v-mn)/range)*(h-p*2);
+    ctx.fillText(Math.round(v), x, Math.max(y-5, 10));
+  });
+}
+
+async function connectBLE() {
+  if (!navigator.bluetooth) { alert('Use Chrome browser to connect.'); return; }
+
+  const btn  = document.getElementById('btn');
+  const dot  = document.getElementById('dot');
+  const stxt = document.getElementById('stxt');
+
+  btn.disabled     = true;
+  dot.className    = 'dot ing';
+  stxt.textContent = 'Scanning...';
+  addLog('Scanning for BioScoreBand...');
+
+  try {
+    dev = await navigator.bluetooth.requestDevice({
+      filters: [{ name: 'BioScoreBand' }],
+      optionalServices: [SVC]
+    });
+    dev.addEventListener('gattserverdisconnected', onDisc);
+    stxt.textContent = 'Connecting...';
+    addLog('Found BioScoreBand — connecting...');
+
+    // Connect with retry — ESP32-C3 GATT server needs time to be ready
+    let srv = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        addLog(`Connection attempt ${attempt}/3...`);
+        srv = await dev.gatt.connect();
+        // Wait for GATT server to fully initialise on the ESP32-C3 side
+        await new Promise(r => setTimeout(r, 500));
+        if (srv.connected) {
+          addLog('GATT connected — discovering services...');
+          break;
+        } else {
+          addLog(`Attempt ${attempt} — not connected, retrying...`);
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      } catch (connErr) {
+        addLog(`Attempt ${attempt} failed — retrying...`);
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+
+    if (!srv || !srv.connected) {
+      throw new Error('Could not connect. Press RESET on band and try again.');
+    }
+    const svc = await srv.getPrimaryService(SVC);
+
+    const mc = await svc.getCharacteristic(MINI);
+    await mc.startNotifications();
+    mc.addEventListener('characteristicvaluechanged', e => onMini(readFloat(e.target.value)));
+    onMini(readFloat(await mc.readValue()));
+
+    const dc = await svc.getCharacteristic(DALY);
+    await dc.startNotifications();
+    dc.addEventListener('characteristicvaluechanged', e => onDaily(readFloat(e.target.value)));
+    onDaily(readFloat(await dc.readValue()));
+
+    const sc = await svc.getCharacteristic(STRK);
+    await sc.startNotifications();
+    sc.addEventListener('characteristicvaluechanged', e => onStreak(e.target.value.getUint8(0)));
+    onStreak((await sc.readValue()).getUint8(0));
+
+    dot.className    = 'dot on';
+    stxt.textContent = 'Connected — ' + dev.name;
+    btn.textContent  = 'Disconnect';
+    btn.onclick      = () => dev && dev.gatt.connected && dev.gatt.disconnect();
+    btn.disabled     = false;
+    document.getElementById('info').style.display = 'none';
+    addLog('✅ Connected. Scores update every 5 minutes.');
+
+  } catch (e) {
+    dot.className    = 'dot';
+    stxt.textContent = 'Not connected';
+    btn.textContent  = 'Connect to Band';
+    btn.onclick      = connectBLE;
+    btn.disabled     = false;
+    addLog('❌ ' + e.message);
+  }
+}
+
+function onDisc() {
+  document.getElementById('dot').className    = 'dot';
+  document.getElementById('stxt').textContent = 'Disconnected';
+  const btn = document.getElementById('btn');
+  btn.textContent = 'Connect to Band';
+  btn.onclick     = connectBLE;
+  btn.disabled    = false;
+  document.getElementById('info').style.display = 'block';
+  calibDone = false;
+  addLog('⚠️ Disconnected from band.');
+}
+
+window.addEventListener('resize', () => { if (hist.length) drawSpark(); });
+window.addEventListener('load',   drawSpark);
+</script>
+</body>
+</html>
